@@ -192,4 +192,33 @@ public class OandaService {
             throw new IllegalStateException("Oanda API hívás sikertelen: " + e.getMessage(), e);
         }
     }
+
+    private JsonNode put(String path, String json) {
+        try {
+            String body = restClient.put()
+                    .uri(path)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(json)
+                    .retrieve()
+                    .body(String.class);
+            return jsonMapper.readTree(body);
+        } catch (RestClientResponseException e) {
+            throw new IllegalStateException("Oanda API hiba (" + e.getStatusCode().value() + "): "
+                    + e.getResponseBodyAsString(), e);
+        } catch (Exception e) {
+            throw new IllegalStateException("Oanda API hívás sikertelen: " + e.getMessage(), e);
+        }
+    }
+
+    private static String text(JsonNode node, String field) {
+        JsonNode value = node.path(field);
+        return value.isMissingNode() || value.isNull() ? "" : value.asString();
+    }
+
+    private static String firstPrice(JsonNode array) {
+        if (array.isArray() && !array.isEmpty()) {
+            return array.get(0).path("price").asString("");
+        }
+        return "";
+    }
 }
