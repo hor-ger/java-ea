@@ -1,17 +1,18 @@
 package com.example.javaea.service;
 
 import com.example.javaea.config.OandaProperties;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClient;
-import org.springframework.web.client.RestClientResponseException;
-import org.springframework.web.util.UriComponentsBuilder;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
 import java.math.BigDecimal;
 import java.net.URI;
+import java.net.URLEncoder;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -30,15 +31,15 @@ public class OandaService {
     );
 
     private final OandaProperties props;
-    private final RestClient restClient;
     private final JsonMapper jsonMapper;
+    private final HttpClient httpClient;
 
-    public OandaService(OandaProperties props, RestClient.Builder builder, JsonMapper jsonMapper) {
+    public OandaService(OandaProperties props, JsonMapper jsonMapper) {
         this.props = props;
         this.jsonMapper = jsonMapper;
-        this.restClient = builder.clone()
-                .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + props.getToken())
-                .defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
+        this.httpClient = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofSeconds(20))
+                .followRedirects(HttpClient.Redirect.NORMAL)
                 .build();
     }
 
@@ -53,12 +54,7 @@ public class OandaService {
 
     public Map<String, Object> getAccountSummary() {
         ensureConfigured();
-        URI uri = UriComponentsBuilder
-                .fromUriString(props.getBaseUrl())
-                .path("/v3/accounts/{accountId}/summary")
-                .buildAndExpand(props.getAccountId())
-                .toUri();
-        JsonNode root = get(uri);
+        JsonNode root = get(apiUri("/v3/accounts/" + props.getAccountId() + "/summary"));
         JsonNode account = root.path("account");
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("id", text(account, "id"));
@@ -76,13 +72,8 @@ public class OandaService {
 
     public Map<String, Object> getCurrentPrice(String instrument) {
         ensureConfigured();
-        URI uri = UriComponentsBuilder
-                .fromUriString(props.getBaseUrl())
-                .path("/v3/accounts/{accountId}/pricing")
-                .queryParam("instruments", instrument)
-                .buildAndExpand(props.getAccountId())
-                .toUri();
-        JsonNode root = get(uri);
+        String q = URLEncoder.encode(instrument, StandardCharsets.UTF_8);
+        JsonNode root = get(apiUri("/v3/accounts/" + props.getAccountId() + "/pricing?instruments=" + q));
         JsonNode price = root.path("prices").path(0);
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("instrument", text(price, "instrument"));
@@ -96,15 +87,10 @@ public class OandaService {
 
     public List<Map<String, Object>> getHistoricalPrices(String instrument, String granularity) {
         ensureConfigured();
-        URI uri = UriComponentsBuilder
-                .fromUriString(props.getBaseUrl())
-                .path("/v3/instruments/{instrument}/candles")
-                .queryParam("granularity", granularity)
-                .queryParam("count", 10)
-                .queryParam("price", "M")
-                .buildAndExpand(instrument)
-                .toUri();
-        JsonNode root = get(uri);
+        String path = "/v3/instruments/" + instrument
+                + "/candles?granularity=" + URLEncoder.encode(granularity, StandardCharsets.UTF_8)
+                + "&count=10&price=M";
+        JsonNode root = get(apiUri(path));
         List<Map<String, Object>> rows = new ArrayList<>();
         for (JsonNode candle : root.path("candles")) {
             Map<String, Object> row = new LinkedHashMap<>();
@@ -126,12 +112,7 @@ public class OandaService {
         String payload = """
                 {"order":{"instrument":"%s","units":"%s","type":"MARKET","timeInForce":"FOK","positionFill":"DEFAULT"}}
                 """.formatted(instrument, units.toPlainString());
-        URI uri = UriComponentsBuilder
-                .fromUriString(props.getBaseUrl())
-                .path("/v3/accounts/{accountId}/orders")
-                .buildAndExpand(props.getAccountId())
-                .toUri();
-        JsonNode root = post(uri, payload);
+        JsonNode root = sendJson("POST", apiUri("/v3/accounts/" + props.getAccountId() + "/orders"), payload);
         Map<String, Object> map = new LinkedHashMap<>();
         JsonNode fill = root.path("orderFillTransaction");
         if (!fill.isMissingNode()) {
@@ -150,12 +131,7 @@ public class OandaService {
 
     public List<Map<String, Object>> getOpenTrades() {
         ensureConfigured();
-        URI uri = UriComponentsBuilder
-                .fromUriString(props.getBaseUrl())
-                .path("/v3/accounts/{accountId}/openTrades")
-                .buildAndExpand(props.getAccountId())
-                .toUri();
-        JsonNode root = get(uri);
+        JsonNode root = get(apiUri("/v3/accounts/" + props.getAccountId() + "/openTrades"));
         List<Map<String, Object>> rows = new ArrayList<>();
         for (JsonNode trade : root.path("trades")) {
             Map<String, Object> row = new LinkedHashMap<>();
@@ -172,12 +148,10 @@ public class OandaService {
 
     public Map<String, Object> closeTrade(String tradeId) {
         ensureConfigured();
-        URI uri = UriComponentsBuilder
-                .fromUriString(props.getBaseUrl())
-                .path("/v3/accounts/{accountId}/trades/{tradeId}/close")
-                .buildAndExpand(props.getAccountId(), tradeId)
-                .toUri();
-        JsonNode root = put(uri, "{\"units\":\"ALL\"}");
+        JsonNode root = sendJson(
+                "PUT",
+                apiUri("/v3/accounts/" + props.getAccountId() + "/trades/" + tradeId + "/close"),
+                "{\"units\":\"ALL\"}");
         Map<String, Object> map = new LinkedHashMap<>();
         JsonNode tx = root.path("orderFillTransaction");
         if (tx.isMissingNode()) {
@@ -193,6 +167,17 @@ public class OandaService {
         return map;
     }
 
+    private URI apiUri(String pathAndQuery) {
+        String base = props.getBaseUrl() == null ? "" : props.getBaseUrl().trim();
+        while (base.endsWith("/")) {
+            base = base.substring(0, base.length() - 1);
+        }
+        if (!pathAndQuery.startsWith("/")) {
+            pathAndQuery = "/" + pathAndQuery;
+        }
+        return URI.create(base + pathAndQuery);
+    }
+
     private void ensureConfigured() {
         if (!isConfigured()) {
             throw new IllegalStateException(
@@ -201,62 +186,45 @@ public class OandaService {
     }
 
     private JsonNode get(URI uri) {
-        try {
-            String body = restClient.get().uri(uri).retrieve().body(String.class);
-            return parseJson(body);
-        } catch (RestClientResponseException e) {
-            throw new IllegalStateException("Oanda API hiba (" + e.getStatusCode().value() + "): "
-                    + e.getResponseBodyAsString(), e);
-        } catch (Exception e) {
-            throw new IllegalStateException("Oanda API hívás sikertelen: " + e.getMessage(), e);
-        }
+        return send(HttpRequest.newBuilder(uri)
+                .timeout(Duration.ofSeconds(30))
+                .header("Authorization", "Bearer " + props.getToken())
+                .header("Accept", "application/json")
+                .GET()
+                .build(), uri);
     }
 
-    private JsonNode post(URI uri, String json) {
-        try {
-            String body = restClient.post()
-                    .uri(uri)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(json)
-                    .retrieve()
-                    .body(String.class);
-            return parseJson(body);
-        } catch (RestClientResponseException e) {
-            throw new IllegalStateException("Oanda API hiba (" + e.getStatusCode().value() + "): "
-                    + e.getResponseBodyAsString(), e);
-        } catch (Exception e) {
-            throw new IllegalStateException("Oanda API hívás sikertelen: " + e.getMessage(), e);
-        }
+    private JsonNode sendJson(String method, URI uri, String json) {
+        return send(HttpRequest.newBuilder(uri)
+                .timeout(Duration.ofSeconds(30))
+                .header("Authorization", "Bearer " + props.getToken())
+                .header("Accept", "application/json")
+                .header("Content-Type", "application/json")
+                .method(method, HttpRequest.BodyPublishers.ofString(json))
+                .build(), uri);
     }
 
-    private JsonNode put(URI uri, String json) {
+    private JsonNode send(HttpRequest request, URI uri) {
         try {
-            String body = restClient.put()
-                    .uri(uri)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(json)
-                    .retrieve()
-                    .body(String.class);
-            return parseJson(body);
-        } catch (RestClientResponseException e) {
-            throw new IllegalStateException("Oanda API hiba (" + e.getStatusCode().value() + "): "
-                    + e.getResponseBodyAsString(), e);
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            String body = response.body() == null ? "" : response.body();
+            int status = response.statusCode();
+            if (status >= 400) {
+                throw new IllegalStateException("Oanda API hiba (" + status + ") @ " + uri + ": " + body);
+            }
+            String trimmed = body.stripLeading();
+            if (trimmed.startsWith("<")) {
+                throw new IllegalStateException(
+                        "Oanda HTML-t adott vissza JSON helyett @ " + uri
+                                + " (HTTP " + status + "). Válasz eleje: "
+                                + trimmed.substring(0, Math.min(180, trimmed.length())));
+            }
+            return jsonMapper.readTree(body);
+        } catch (IllegalStateException e) {
+            throw e;
         } catch (Exception e) {
-            throw new IllegalStateException("Oanda API hívás sikertelen: " + e.getMessage(), e);
+            throw new IllegalStateException("Oanda API hívás sikertelen @ " + uri + ": " + e.getMessage(), e);
         }
-    }
-
-    private JsonNode parseJson(String body) {
-        if (body == null || body.isBlank()) {
-            throw new IllegalStateException("Oanda üres választ adott.");
-        }
-        String trimmed = body.stripLeading();
-        if (trimmed.startsWith("<")) {
-            throw new IllegalStateException(
-                    "Oanda HTML-t adott vissza JSON helyett (rossz URL vagy hálózati szűrő). Válasz eleje: "
-                            + trimmed.substring(0, Math.min(180, trimmed.length())));
-        }
-        return jsonMapper.readTree(body);
     }
 
     private static String text(JsonNode node, String field) {
