@@ -1,7 +1,7 @@
 <!DOCTYPE HTML>
 <html lang="hu" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>Java Spring Boot Beadandó – Forex-account menü</title>
+    <title>Java Spring Boot Beadandó – Forex-Nyit menü</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
     <link rel="stylesheet" href="/assets/css/main.css" />
@@ -9,24 +9,20 @@
 </head>
 <body class="is-preload">
 
-<!-- Wrapper -->
 <div id="wrapper" class="fade-in">
 
-    <!-- Intro -->
     <div id="intro">
-        <h1>SOAP<br />kliens</h1>
-        <p>"Adj meg itt egy leírás"</p>
+        <h1>Forex<br />Nyit</h1>
+        <p>Pozíció nyitása piaci áron (Long / Short).</p>
         <ul class="actions">
             <li><a href="#header" class="button icon solid solo fa-arrow-down scrolly">Tovább</a></li>
         </ul>
     </div>
 
-    <!-- Header -->
     <header id="header">
         <a th:href="@{/}" class="logo">Főoldal</a>
     </header>
 
-    <!-- Nav (Fenti menüsáv) -->
     <nav id="nav">
         <ul class="links">
             <li><a th:href="@{/}">Főoldal</a></li>
@@ -40,19 +36,47 @@
         </ul>
     </nav>
 
-    <!-- Main -->
     <div id="main">
         <article class="post featured">
             <header class="major">
-
-
+                <h2>Pozíció nyitás</h2>
+                <p>Pozitív mennyiség = Long, negatív = Short. Piaci áron nyit.</p>
             </header>
+            <p th:if="${error}" th:text="${error}"></p>
+            <p th:if="${success}" th:text="${success}"></p>
 
-            <p></p>
+            <form method="post" th:action="@{/open}">
+                <div class="fields">
+                    <div class="field half">
+                        <label for="instrument">Instrumentum</label>
+                        <select id="instrument" name="instrument">
+                            <option th:each="i : ${instruments}" th:value="${i}" th:text="${i}"
+                                    th:selected="${i == instrument}"></option>
+                        </select>
+                    </div>
+                    <div class="field half">
+                        <label for="units">Mennyiség (units)</label>
+                        <input type="number" id="units" name="units" th:value="${units}" step="1" required />
+                    </div>
+                </div>
+                <ul class="actions">
+                    <li><input type="submit" value="Pozíció nyitása" /></li>
+                </ul>
+            </form>
+
+            <div class="table-wrapper" th:if="${result != null}">
+                <table>
+                    <tbody>
+                    <tr th:each="entry : ${result}">
+                        <th th:text="${entry.key}"></th>
+                        <td th:text="${entry.value}"></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
         </article>
     </div>
 
-    <!-- Copyright / Kötelező lábléc minden oldal aljára -->
     <div id="copyright">
         <ul>
             <li>Csapat tagja: <strong>Radics Róbert Pál (JQ8R8D)</strong> &amp; <strong>Horváth Gergő (DHWIDH)</strong></li>
@@ -62,7 +86,6 @@
 
 </div>
 
-<!-- Scripts -->
 <script src="/assets/js/jquery.min.js"></script>
 <script src="/assets/js/jquery.scrollex.min.js"></script>
 <script src="/assets/js/jquery.scrolly.min.js"></script>
