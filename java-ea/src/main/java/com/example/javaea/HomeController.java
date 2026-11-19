@@ -62,6 +62,36 @@ public class HomeController {
         }
         return "actual";
     }
+    @GetMapping("/historical")
+    public String historical(Model model) {
+        model.addAttribute("oandaConfigured", oandaService.isConfigured());
+        model.addAttribute("instruments", OandaService.INSTRUMENTS);
+        model.addAttribute("granularities", OandaService.GRANULARITIES);
+        model.addAttribute("instrument", "EUR_USD");
+        model.addAttribute("granularity", "D");
+        model.addAttribute("candles", Collections.emptyList());
+        return "historical";
+    }
+
+    @PostMapping("/historical")
+    public String historicalQuery(
+            @RequestParam String instrument,
+            @RequestParam String granularity,
+            Model model) {
+        model.addAttribute("oandaConfigured", oandaService.isConfigured());
+        model.addAttribute("instruments", OandaService.INSTRUMENTS);
+        model.addAttribute("granularities", OandaService.GRANULARITIES);
+        model.addAttribute("instrument", instrument);
+        model.addAttribute("granularity", granularity);
+        try {
+            List<Map<String, Object>> candles = oandaService.getHistoricalPrices(instrument, granularity);
+            model.addAttribute("candles", candles);
+        } catch (Exception e) {
+            model.addAttribute("error", e.getMessage());
+            model.addAttribute("candles", Collections.emptyList());
+        }
+        return "historical";
+    }
 
 
 }
