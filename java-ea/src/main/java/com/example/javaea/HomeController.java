@@ -133,6 +133,31 @@ public class HomeController {
         }
         return "positions";
     }
+    @PostMapping("/close")
+    public String closeTrade(@RequestParam String tradeId, Model model) {
+        model.addAttribute("oandaConfigured", oandaService.isConfigured());
+        model.addAttribute("tradeId", tradeId);
+        try {
+            model.addAttribute("result", oandaService.closeTrade(tradeId));
+            model.addAttribute("success", "Pozíció lezárva piaci áron.");
+        } catch (Exception e) {
+            String msg = e.getMessage();
+            if (msg != null && msg.contains("TRADE_DOESNT_EXIST")) {
+                model.addAttribute("error",
+                        "Ez a trade ID nem létezik (már le van zárva, vagy hibás szám). Nézd meg a Forex-Poz listát, és a táblázatból másold be az ID-t.");
+            } else {
+                model.addAttribute("error", msg);
+            }
+        }
+        loadOpenTradesForClose(model);
+        return "close";
+    }
 
-
+    private void loadOpenTradesForClose(Model model) {
+        try {
+            model.addAttribute("trades", oandaService.getOpenTrades());
+        } catch (Exception e) {
+            model.addAttribute("trades", Collections.emptyList());
+        }
+    }
 }
