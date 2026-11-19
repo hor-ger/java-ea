@@ -48,5 +48,57 @@ public class OandaService {
                 && !props.getAccountId().isBlank()
                 && !props.getAccountId().startsWith("IDE_IRD");
     }
+    public Map<String, Object> getAccountSummary() {
+        ensureConfigured();
+        JsonNode root = get("/v3/accounts/" + props.getAccountId() + "/summary");
+        JsonNode account = root.path("account");
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("id", text(account, "id"));
+        map.put("alias", text(account, "alias"));
+        map.put("currency", text(account, "currency"));
+        map.put("balance", text(account, "balance"));
+        map.put("nav", text(account, "NAV"));
+        map.put("unrealizedPL", text(account, "unrealizedPL"));
+        map.put("marginUsed", text(account, "marginUsed"));
+        map.put("marginAvailable", text(account, "marginAvailable"));
+        map.put("openTradeCount", text(account, "openTradeCount"));
+        map.put("openPositionCount", text(account, "openPositionCount"));
+        return map;
+    }
+
+    public Map<String, Object> getCurrentPrice(String instrument) {
+        ensureConfigured();
+        JsonNode root = get("/v3/accounts/" + props.getAccountId()
+                + "/pricing?instruments=" + instrument);
+        JsonNode price = root.path("prices").path(0);
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("instrument", text(price, "instrument"));
+        map.put("time", text(price, "time"));
+        map.put("bid", firstPrice(price.path("bids")));
+        map.put("ask", firstPrice(price.path("asks")));
+        map.put("status", text(price, "status"));
+        map.put("tradeable", price.path("tradeable").asBoolean(false));
+        return map;
+    }
+
+    public List<Map<String, Object>> getHistoricalPrices(String instrument, String granularity) {
+        ensureConfigured();
+        JsonNode root = get("/v3/instruments/" + instrument
+                + "/candles?granularity=" + granularity + "&count=10&price=M");
+        List<Map<String, Object>> rows = new ArrayList<>();
+        for (JsonNode candle : root.path("candles")) {
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("time", text(candle, "time"));
+            row.put("complete", candle.path("complete").asBoolean(false));
+            JsonNode mid = candle.path("mid");
+            row.put("open", text(mid, "o"));
+            row.put("high", text(mid, "h"));
+            row.put("low", text(mid, "l"));
+            row.put("close", text(mid, "c"));
+            row.put("volume", candle.path("volume").asString(""));
+            rows.add(row);
+        }
+        return rows;
+    }
 
 }
