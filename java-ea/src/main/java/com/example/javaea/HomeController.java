@@ -133,6 +133,13 @@ public class HomeController {
         }
         return "positions";
     }
+    @GetMapping("/close")
+    public String close(Model model) {
+        model.addAttribute("oandaConfigured", oandaService.isConfigured());
+        model.addAttribute("tradeId", "");
+        loadOpenTradesForClose(model);
+        return "close";
+    }
     @PostMapping("/close")
     public String closeTrade(@RequestParam String tradeId, Model model) {
         model.addAttribute("oandaConfigured", oandaService.isConfigured());
