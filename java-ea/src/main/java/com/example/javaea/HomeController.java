@@ -92,6 +92,47 @@ public class HomeController {
         }
         return "historical";
     }
+    @GetMapping("/open")
+    public String open(Model model) {
+        model.addAttribute("oandaConfigured", oandaService.isConfigured());
+        model.addAttribute("instruments", OandaService.INSTRUMENTS);
+        model.addAttribute("instrument", "EUR_USD");
+        model.addAttribute("units", 100);
+        return "open";
+    }
+
+    @PostMapping("/open")
+    public String openTrade(
+            @RequestParam String instrument,
+            @RequestParam BigDecimal units,
+            Model model) {
+        model.addAttribute("oandaConfigured", oandaService.isConfigured());
+        model.addAttribute("instruments", OandaService.INSTRUMENTS);
+        model.addAttribute("instrument", instrument);
+        model.addAttribute("units", units);
+        try {
+            if (units.compareTo(BigDecimal.ZERO) == 0) {
+                throw new IllegalArgumentException("A mennyiség nem lehet 0.");
+            }
+            model.addAttribute("result", oandaService.openTrade(instrument, units));
+            model.addAttribute("success", "Pozíció megnyitva piaci áron.");
+        } catch (Exception e) {
+            model.addAttribute("error", e.getMessage());
+        }
+        return "open";
+    }
+
+    @GetMapping("/positions")
+    public String positions(Model model) {
+        model.addAttribute("oandaConfigured", oandaService.isConfigured());
+        try {
+            model.addAttribute("trades", oandaService.getOpenTrades());
+        } catch (Exception e) {
+            model.addAttribute("error", e.getMessage());
+            model.addAttribute("trades", Collections.emptyList());
+        }
+        return "positions";
+    }
 
 
 }
