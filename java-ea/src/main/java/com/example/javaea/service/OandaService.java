@@ -157,5 +157,39 @@ public class OandaService {
         map.put("type", text(tx, "type"));
         return map;
     }
+    private void ensureConfigured() {
+        if (!isConfigured()) {
+            throw new IllegalStateException(
+                    "Oanda API nincs beállítva. Állítsd be az oanda.api.token és oanda.api.account-id értékeket az application.properties fájlban.");
+        }
+    }
 
+    private JsonNode get(String path) {
+        try {
+            String body = restClient.get().uri(path).retrieve().body(String.class);
+            return jsonMapper.readTree(body);
+        } catch (RestClientResponseException e) {
+            throw new IllegalStateException("Oanda API hiba (" + e.getStatusCode().value() + "): "
+                    + e.getResponseBodyAsString(), e);
+        } catch (Exception e) {
+            throw new IllegalStateException("Oanda API hívás sikertelen: " + e.getMessage(), e);
+        }
+    }
+
+    private JsonNode post(String path, String json) {
+        try {
+            String body = restClient.post()
+                    .uri(path)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(json)
+                    .retrieve()
+                    .body(String.class);
+            return jsonMapper.readTree(body);
+        } catch (RestClientResponseException e) {
+            throw new IllegalStateException("Oanda API hiba (" + e.getStatusCode().value() + "): "
+                    + e.getResponseBodyAsString(), e);
+        } catch (Exception e) {
+            throw new IllegalStateException("Oanda API hívás sikertelen: " + e.getMessage(), e);
+        }
+    }
 }
