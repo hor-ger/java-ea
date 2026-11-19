@@ -1,7 +1,7 @@
 <!DOCTYPE HTML>
 <html lang="hu" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>Java Spring Boot Beadandó – Forex-account menü</title>
+    <title>Java Spring Boot Beadandó – Forex-Poz menü</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
     <link rel="stylesheet" href="/assets/css/main.css" />
@@ -9,24 +9,20 @@
 </head>
 <body class="is-preload">
 
-<!-- Wrapper -->
 <div id="wrapper" class="fade-in">
 
-    <!-- Intro -->
     <div id="intro">
-        <h1>SOAP<br />kliens</h1>
-        <p>"Adj meg itt egy leírás"</p>
+        <h1>Forex<br />Poz</h1>
+        <p>Nyitott pozíciók listája.</p>
         <ul class="actions">
             <li><a href="#header" class="button icon solid solo fa-arrow-down scrolly">Tovább</a></li>
         </ul>
     </div>
 
-    <!-- Header -->
     <header id="header">
         <a th:href="@{/}" class="logo">Főoldal</a>
     </header>
 
-    <!-- Nav (Fenti menüsáv) -->
     <nav id="nav">
         <ul class="links">
             <li><a th:href="@{/}">Főoldal</a></li>
@@ -40,19 +36,44 @@
         </ul>
     </nav>
 
-    <!-- Main -->
     <div id="main">
         <article class="post featured">
             <header class="major">
-
-
+                <h2>Nyitott pozíciók</h2>
+                <p>Az Oanda számlán lévő nyitott trade-ek.</p>
             </header>
+            <p th:if="${error}" th:text="${error}"></p>
 
-            <p></p>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>Trade ID</th>
+                        <th>Instrument</th>
+                        <th>Units</th>
+                        <th>Price</th>
+                        <th>Unrealized PL</th>
+                        <th>Open time</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:if="${trades == null or trades.isEmpty()}">
+                        <td colspan="6">Nincs nyitott pozíció.</td>
+                    </tr>
+                    <tr th:each="t : ${trades}">
+                        <td th:text="${t['id']}"></td>
+                        <td th:text="${t['instrument']}"></td>
+                        <td th:text="${t['currentUnits']}"></td>
+                        <td th:text="${t['price']}"></td>
+                        <td th:text="${t['unrealizedPL']}"></td>
+                        <td th:text="${t['openTime']}"></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
         </article>
     </div>
 
-    <!-- Copyright / Kötelező lábléc minden oldal aljára -->
     <div id="copyright">
         <ul>
             <li>Csapat tagja: <strong>Radics Róbert Pál (JQ8R8D)</strong> &amp; <strong>Horváth Gergő (DHWIDH)</strong></li>
@@ -62,7 +83,6 @@
 
 </div>
 
-<!-- Scripts -->
 <script src="/assets/js/jquery.min.js"></script>
 <script src="/assets/js/jquery.scrollex.min.js"></script>
 <script src="/assets/js/jquery.scrolly.min.js"></script>
