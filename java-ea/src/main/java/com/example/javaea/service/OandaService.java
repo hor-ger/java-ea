@@ -100,5 +100,62 @@ public class OandaService {
         }
         return rows;
     }
+    public Map<String, Object> openTrade(String instrument, BigDecimal units) {
+        ensureConfigured();
+        String payload = """
+                {"order":{"instrument":"%s","units":"%s","type":"MARKET","timeInForce":"FOK","positionFill":"DEFAULT"}}
+                """.formatted(instrument, units.toPlainString());
+        JsonNode root = post("/v3/accounts/" + props.getAccountId() + "/orders", payload);
+        Map<String, Object> map = new LinkedHashMap<>();
+        JsonNode fill = root.path("orderFillTransaction");
+        if (!fill.isMissingNode()) {
+            map.put("tradeId", text(fill.path("tradeOpened"), "tradeID"));
+            map.put("instrument", text(fill, "instrument"));
+            map.put("units", text(fill, "units"));
+            map.put("price", text(fill, "price"));
+            map.put("pl", text(fill, "pl"));
+            map.put("time", text(fill, "time"));
+            map.put("type", text(fill, "type"));
+        } else {
+            map.put("raw", root.toString());
+        }
+        return map;
+    }
+
+    public List<Map<String, Object>> getOpenTrades() {
+        ensureConfigured();
+        JsonNode root = get("/v3/accounts/" + props.getAccountId() + "/openTrades");
+        List<Map<String, Object>> rows = new ArrayList<>();
+        for (JsonNode trade : root.path("trades")) {
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("id", text(trade, "id"));
+            row.put("instrument", text(trade, "instrument"));
+            row.put("currentUnits", text(trade, "currentUnits"));
+            row.put("price", text(trade, "price"));
+            row.put("unrealizedPL", text(trade, "unrealizedPL"));
+            row.put("openTime", text(trade, "openTime"));
+            rows.add(row);
+        }
+        return rows;
+    }
+
+    public Map<String, Object> closeTrade(String tradeId) {
+        ensureConfigured();
+        JsonNode root = put("/v3/accounts/" + props.getAccountId() + "/trades/" + tradeId + "/close",
+                "{\"units\":\"ALL\"}");
+        Map<String, Object> map = new LinkedHashMap<>();
+        JsonNode tx = root.path("orderFillTransaction");
+        if (tx.isMissingNode()) {
+            tx = root.path("orderCreateTransaction");
+        }
+        map.put("tradeId", tradeId);
+        map.put("instrument", text(tx, "instrument"));
+        map.put("units", text(tx, "units"));
+        map.put("price", text(tx, "price"));
+        map.put("pl", text(tx, "pl"));
+        map.put("time", text(tx, "time"));
+        map.put("type", text(tx, "type"));
+        return map;
+    }
 
 }
