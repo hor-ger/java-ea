@@ -8,6 +8,6 @@ import org.springframework.web.client.RestClient;
 public class Webconfig {
     @Bean
     public RestClient.Builder restClientBuilder(){
-        return restClientBuilder();
+        return RestClient.builder();
     }
 }
