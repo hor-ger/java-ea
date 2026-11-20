@@ -26,10 +26,7 @@ public class HomeController {
         return "index";
     }
 
-    @GetMapping("/soap")
-    public String soap() {
-        return "soap";
-    }
+
 
     @GetMapping("/account")
     public String account(Model model) {

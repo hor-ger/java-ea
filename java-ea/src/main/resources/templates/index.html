@@ -1,7 +1,7 @@
 <!DOCTYPE HTML>
 <html lang="hu" xmlns:th="http://www.thymeleaf.org">
 <head>
-	<title>Java Spring Boot Beadandó – Forex-account menü</title>
+	<title>Java Spring Boot Beadandó – Főoldal</title>
 	<meta charset="utf-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
 	<link rel="stylesheet" href="/assets/css/main.css" />
@@ -14,8 +14,9 @@
 
 	<!-- Intro -->
 	<div id="intro">
-		<h1>SOAP<br />kliens</h1>
-		<p>"Adj meg itt egy leírás"</p>
+		<h1>Java alkalmazások<br />előadás beadandó</h1>
+		<p>Magyar Nemzeti Bank (MNB) SOAP árfolyam-lekérdező<br />
+			és Oanda v20 Forex devizakereskedési webalkalmazás.</p>
 		<ul class="actions">
 			<li><a href="#header" class="button icon solid solo fa-arrow-down scrolly">Tovább</a></li>
 		</ul>
@@ -23,14 +24,14 @@
 
 	<!-- Header -->
 	<header id="header">
-		<a th:href="@{/}" class="logo">Főoldal</a>
+		<a th:href="@{/}" class="logo">Java EA Beadandó</a>
 	</header>
 
 	<!-- Nav (Fenti menüsáv) -->
 	<nav id="nav">
 		<ul class="links">
-			<li><a th:href="@{/}">Főoldal</a></li>
-			<li class="active"><a th:href="@{/soap}">SOAP</a></li>
+			<li class="active"><a th:href="@{/}">Főoldal</a></li>
+			<li><a th:href="@{/soap}">SOAP</a></li>
 			<li><a th:href="@{/account}">Forex-account</a></li>
 			<li><a th:href="@{/actual}">Forex-AktÁr</a></li>
 			<li><a th:href="@{/historical}">Forex-HistÁr</a></li>
@@ -45,10 +46,36 @@
 		<article class="post featured">
 			<header class="major">
 
-
+				<h2>Az alkalmazás bemutatása</h2>
+				<p>Az alkalmazás képes valós idejű és korábbi devizaárfolyamok lekérdezésére, grafikus megjelenítésére,
+					valamint demo számlán történő devizakereskedési műveletek végrehajtására.</p>
 			</header>
 
-			<p></p>
+			<section class="posts">
+				<article>
+					<header>
+						<h3>MNB SOAP Kliens</h3>
+					</header>
+					<p>A Magyar Nemzeti Bank hivatalos WSDL alapú SOAP webszolgáltatásán keresztül lekérdezi
+						a választott deviza adott időszakra vonatkozó középárfolyamait, majd táblázatosan
+						és Chart.js grafikonon is ábrázolja azokat.</p>
+					<ul class="actions special">
+						<li><a th:href="@{/soap}" class="button">SOAP megnyitása</a></li>
+					</ul>
+				</article>
+
+				<article>
+					<header>
+						<h3>Oanda Forex Kliens</h3>
+					</header>
+					<p>Az Oanda REST API segítségével megjeleníti a demo kereskedési számla adatait,
+						aktuális és historikus instrumentum árakat kérdez le, valamint lehetővé teszi
+						piaci pozíciók nyitását, listázását és zárását.</p>
+					<ul class="actions special">
+						<li><a th:href="@{/account}" class="button">Forex számla</a></li>
+					</ul>
+				</article>
+			</section>
 		</article>
 	</div>
 
