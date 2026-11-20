@@ -43,40 +43,114 @@
 
 	<!-- Main -->
 	<div id="main">
+
+		<!-- Általános bemutatás -->
 		<article class="post featured">
 			<header class="major">
-
+				<span class="date">Spring Boot &bull; Thymeleaf &bull; SOAP &bull; REST</span>
 				<h2>Az alkalmazás bemutatása</h2>
-				<p>Az alkalmazás képes valós idejű és korábbi devizaárfolyamok lekérdezésére, grafikus megjelenítésére,
-					valamint demo számlán történő devizakereskedési műveletek végrehajtására.</p>
+				<p>Ez a Java Spring Boot alapú webalkalmazás két eltérő webszolgáltatási technológiát –
+					a klasszikus XML-alapú SOAP protokollt és a modern JSON-alapú REST API kommunikációt –
+					fogja össze egyetlen, egységes felületen. Az alkalmazás segítségével a felhasználó hivatalos
+					MNB devizaárfolyamokat kérdezhet le és jeleníthet meg grafikonon, valamint egy Oanda demo
+					számlán keresztül valós piaci adatokkal és kereskedési műveletekkel dolgozhat.</p>
 			</header>
 
-			<section class="posts">
-				<article>
-					<header>
-						<h3>MNB SOAP Kliens</h3>
-					</header>
-					<p>A Magyar Nemzeti Bank hivatalos WSDL alapú SOAP webszolgáltatásán keresztül lekérdezi
-						a választott deviza adott időszakra vonatkozó középárfolyamait, majd táblázatosan
-						és Chart.js grafikonon is ábrázolja azokat.</p>
-					<ul class="actions special">
-						<li><a th:href="@{/soap}" class="button">SOAP megnyitása</a></li>
-					</ul>
-				</article>
-
-				<article>
-					<header>
-						<h3>Oanda Forex Kliens</h3>
-					</header>
-					<p>Az Oanda REST API segítségével megjeleníti a demo kereskedési számla adatait,
-						aktuális és historikus instrumentum árakat kérdez le, valamint lehetővé teszi
-						piaci pozíciók nyitását, listázását és zárását.</p>
-					<ul class="actions special">
-						<li><a th:href="@{/account}" class="button">Forex számla</a></li>
-					</ul>
-				</article>
-			</section>
+			<h3>MNB SOAP Árfolyam-lekérdező modul</h3>
+			<p>A <a th:href="@{/soap}"><strong>SOAP menüpontban</strong></a> a Magyar Nemzeti Bank hivatalos,
+				WSDL-leíróra épülő webszolgáltatásával kommunikál az alkalmazás a <code>jaxws</code> pluginnal
+				generált kliensosztályokon keresztül. A felhasználó lenyíló listából kiválaszthatja a kívánt devizát
+				(pl. EUR, USD, GBP, CHF), valamint dátummezők segítségével megadhatja a lekérdezés kezdő és befejező
+				időpontját. A szerver feldolgozza a beérkező XML-választ, majd a napi középárfolyamokat áttekinthető
+				táblázatban és interaktív <strong>Chart.js</strong> vonaldiagramon is megjeleníti.</p>
+			<ul class="actions special">
+				<li><a th:href="@{/soap}" class="button large primary">SOAP árfolyam-lekérdező megnyitása</a></li>
+			</ul>
 		</article>
+
+		<!-- Oanda Forex menüpontok (2x3-as rács) -->
+		<section class="posts">
+			<article>
+				<header>
+					<span class="date">Oanda v20 API</span>
+					<h3><a th:href="@{/account}">Forex-account<br />Számlainformációk</a></h3>
+				</header>
+				<p>A menüpont az Oanda demo kereskedési számla legfontosabb alapadatait kéri le és jeleníti meg
+					valós időben. Itt ellenőrizhető többek között a számla azonosítója, a pénznem, az aktuális
+					egyenleg, a rendelkezésre álló fedezet (margin), valamint a nyitott pozíciók és megbízások
+					összesített állapota.</p>
+				<ul class="actions special">
+					<li><a th:href="@{/account}" class="button">Forex-account megnyitása</a></li>
+				</ul>
+			</article>
+
+			<article>
+				<header>
+					<span class="date">Oanda v20 API</span>
+					<h3><a th:href="@{/actual}">Forex-AktÁr<br />Aktuális árfolyam</a></h3>
+				</header>
+				<p>Az oldalon egy lenyíló listából választható ki a vizsgálni kívánt devizapár vagy instrumentum
+					(például EUR_USD, USD_HUF). A lekérdezés eredményeként az alkalmazás azonnal megjeleníti a
+					kiválasztott instrumentum aktuális piaci vételi (Bid) és eladási (Ask) árait.</p>
+				<ul class="actions special">
+					<li><a th:href="@{/actual}" class="button">Forex-AktÁr megnyitása</a></li>
+				</ul>
+			</article>
+
+			<article>
+				<header>
+					<span class="date">Oanda v20 API</span>
+					<h3><a th:href="@{/historical}">Forex-HistÁr<br />Historikus adatok</a></h3>
+				</header>
+				<p>Korábbi árfolyamadatok elemzésére szolgáló felület, ahol az instrumentum mellett az
+					időfelbontás (Granularity – pl. perces, órás vagy napi gyertyák) is megadható. A rendszer
+					lekéri és megjeleníti a választott beállításoknak megfelelő utolsó 10 historikus árfolyamot.</p>
+				<ul class="actions special">
+					<li><a th:href="@{/historical}" class="button">Forex-HistÁr megnyitása</a></li>
+				</ul>
+			</article>
+
+			<article>
+				<header>
+					<span class="date">Oanda v20 API</span>
+					<h3><a th:href="@{/open}">Forex-Nyit<br />Pozíció nyitása</a></h3>
+				</header>
+				<p>Új piaci megbízás rögzítése a demo számlán. A felhasználó kiválasztja a kereskedni kívánt
+					instrumentumot és megadja az egységek számát: pozitív mennyiség megadásával vételi
+					(<strong>Long</strong>), negatív mennyiséggel pedig eladási (<strong>Short</strong>)
+					pozíció nyitható az aktuális piaci áron.</p>
+				<ul class="actions special">
+					<li><a th:href="@{/open}" class="button">Forex-Nyit megnyitása</a></li>
+				</ul>
+			</article>
+
+			<article>
+				<header>
+					<span class="date">Oanda v20 API</span>
+					<h3><a th:href="@{/positions}">Forex-Poz<br />Nyitott pozíciók</a></h3>
+				</header>
+				<p>Áttekinthető, táblázatos nézetet biztosít a számlán jelenleg aktív pozíciókról és nyitott
+					ügyletekről. A listában megtekinthető az egyes pozíciók egyedi azonosítója (Trade ID), az
+					instrumentum neve, a nyitott mennyiség, a nyitóár, valamint az aktuális nem realizált eredmény.</p>
+				<ul class="actions special">
+					<li><a th:href="@{/positions}" class="button">Forex-Poz megnyitása</a></li>
+				</ul>
+			</article>
+
+			<article>
+				<header>
+					<span class="date">Oanda v20 API</span>
+					<h3><a th:href="@{/close}">Forex-Zár<br />Pozíció zárása</a></h3>
+				</header>
+				<p>A meglévő nyitott pozíciók azonnali lezárására szolgáló oldal. A <em>Forex-Poz</em> menüben
+					látható <strong>Trade ID</strong> numerikus megadásával a felhasználó piaci áron lezárhatja
+					a kiválasztott ügyletet, amelynek eredményéről a felület visszajelzést ad.</p>
+				<ul class="actions special">
+					<li><a th:href="@{/close}" class="button">Forex-Zár megnyitása</a></li>
+				</ul>
+			</article>
+		</section>
+
 	</div>
 
 	<!-- Copyright / Kötelező lábléc minden oldal aljára -->
